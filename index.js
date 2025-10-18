@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, Partials } = require('discord.js');
 const axios = require('axios');
 
 const client = new Client({
@@ -7,7 +7,7 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
   ],
-  partials: ['CHANNEL'] // This is important for DMs
+  partials: [Partials.Channel] // Fixed this line
 });
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
