@@ -33,8 +33,22 @@ client.on('messageCreate', async (message) => {
   const urlPattern = /(https?:\/\/[^\s]+)/g;
   const urls = content.match(urlPattern);
   
-  // If user has a pending post, this message is the title
-  if (pendingPosts.has(userId)) {
+  // If message contains a URL
+  if (urls && urls.length > 0) {
+    const link = urls[0];
+    
+    // If user already has a pending post, replace it
+    if (pendingPosts.has(userId)) {
+      await message.reply('🔄 Replacing previous link with this new one. Now send me the title:');
+    } else {
+      await message.reply('📝 Got it! Now send me the title for this video:');
+    }
+    
+    pendingPosts.set(userId, link);
+    console.log(`📎 Link received: ${link}, waiting for title...`);
+  }
+  // If user has a pending post and this is NOT a URL, treat it as the title
+  else if (pendingPosts.has(userId)) {
     const link = pendingPosts.get(userId);
     const title = content;
     
@@ -49,25 +63,17 @@ client.on('messageCreate', async (message) => {
         timestamp: new Date().toISOString()
       });
       
-      await message.reply(`✅ Video "${title}" added to posting queue! Will be uploaded to TikTok shortly.`);
-      pendingPosts.delete(userId); // Clear the pending post
+      await message.reply(`✅ Video "${title}" added to posting queue! 🎬`);
+      pendingPosts.delete(userId);
     } catch (error) {
       console.error('❌ Error sending to n8n:', error.message);
-      await message.reply('❌ Error processing your request. Please try again.');
+      await message.reply('❌ Error processing your request. Please try again by sending the link first.');
       pendingPosts.delete(userId);
     }
   }
-  // If message contains a URL, ask for title
-  else if (urls && urls.length > 0) {
-    const link = urls[0]; // Take the first URL
-    pendingPosts.set(userId, link);
-    
-    console.log(`📎 Link received: ${link}, waiting for title...`);
-    await message.reply('📝 Got it! Now send me the title for this video:');
-  }
   // No URL and no pending post
   else {
-    await message.reply('👋 Hey! Send me a video link (TikTok, Instagram, YouTube, or Google Drive) and I\'ll help you repost it to TikTok!');
+    await message.reply('👋 Send me a video link (TikTok, Instagram, YouTube, or Google Drive) to get started!');
   }
 });
 
