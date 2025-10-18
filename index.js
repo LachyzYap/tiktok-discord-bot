@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
 const axios = require('axios');
 
 const client = new Client({
@@ -6,7 +6,8 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
-  ]
+  ],
+  partials: ['CHANNEL'] // This is important for DMs
 });
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
@@ -20,14 +21,23 @@ client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
   
-  // Only respond to DMs
-  if (message.channel.type !== 1) return;
+  console.log(`📨 Message received from ${message.author.username}`);
+  console.log(`📝 Content: ${message.content}`);
+  console.log(`📍 Channel type: ${message.channel.type}`);
   
-  console.log(`📨 Received DM from ${message.author.username}: ${message.content}`);
+  // Only respond to DMs (ChannelType.DM)
+  if (message.channel.type !== ChannelType.DM) {
+    console.log('❌ Not a DM, ignoring...');
+    return;
+  }
+  
+  console.log('✅ DM detected, processing...');
   
   const content = message.content;
   
   try {
+    console.log(`🌐 Sending to n8n: ${N8N_WEBHOOK_URL}`);
+    
     await axios.post(N8N_WEBHOOK_URL, {
       content: content,
       userId: message.author.id,
@@ -35,9 +45,10 @@ client.on('messageCreate', async (message) => {
       timestamp: new Date().toISOString()
     });
     
+    console.log('✅ Successfully sent to n8n');
     await message.reply('✅ Video added to posting queue! Will be uploaded to TikTok shortly.');
   } catch (error) {
-    console.error('Error sending to n8n:', error.message);
+    console.error('❌ Error:', error.message);
     await message.reply('❌ Error processing your request. Please try again.');
   }
 });
